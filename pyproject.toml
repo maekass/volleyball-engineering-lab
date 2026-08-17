@@ -8,6 +8,9 @@ version = "0.1.0"
 description = "Computational engineering study of indoor volleyball architecture."
 requires-python = ">=3.11"
 
+dependencies = [
+    "cadquery==2.8.0",
+]
 [project.optional-dependencies]
 dev = [
     "pytest",
