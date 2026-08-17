@@ -6,10 +6,11 @@
 # For thin spherical layers, mass is approximately proportional to
 # thickness × density because the layers cover roughly the same surface area.
 
-
 from ball001.design import BALL_001
 from ball001.geometry import diameter_from_radius, radius_from_circumference
 from ball001.mass import calculate_layer_masses, calculate_total_mass
+from ball001.surface import BALL_001_SEAM
+from ball001.surface_mass import calculate_surface_adjusted_mass
 
 
 def main() -> None:
@@ -37,9 +38,36 @@ def main() -> None:
     print(f"Model estimate:        {total_mass_kg * 1000:.2f} g")
     print(f"Target delta:          {delta_kg * 1000:+.2f} g")
 
+    surface_mass = calculate_surface_adjusted_mass(
+        BALL_001,
+        BALL_001_SEAM,
+    )
+
     print()
-    print("NOTE: Layer thicknesses and densities are PENDING inputs.")
-    print("This output is not a measured or validated BALL 001 result.")
+    print("SURFACE ADJUSTMENT")
+    print("-" * 50)
+    print(
+        f"Groove mass removed:   "
+        f"{surface_mass.removed_skin_mass_kg * 1000:.3f} g"
+    )
+    print(
+        f"Adjusted model mass:   "
+        f"{surface_mass.adjusted_mass_kg * 1000:.2f} g"
+    )
+
+    adjusted_delta_kg = (
+        surface_mass.adjusted_mass_kg
+        - BALL_001.target_mass_kg
+    )
+
+    print(
+        f"Adjusted target delta: "
+        f"{adjusted_delta_kg * 1000:+.2f} g"
+    )
+
+    print()
+    print("NOTE: Layer and seam parameters are PENDING computational inputs.")
+    print("The adjusted mass is a CAD-derived estimate, not a measured result.")
 
 
 if __name__ == "__main__":
