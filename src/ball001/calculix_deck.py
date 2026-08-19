@@ -377,7 +377,7 @@ def export_calculix_verification_deck(
     # This trial sign is chosen to generate outward
     # inflation and must be verified from the result.
     applied_pressure_n_mm2 = (
-        -pressure_n_mm2
+        pressure_n_mm2
     )
 
     lines = [

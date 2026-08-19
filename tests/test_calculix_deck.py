@@ -122,12 +122,12 @@ def test_deck_contains_nominal_pressure(
     assert (
         summary.applied_pressure_n_mm2
         == pytest.approx(
-            -0.030656
+            0.030656
         )
     )
 
     assert (
-        "EALL, P, -0.030656000"
+        "EALL, P, 0.030656000"
         in text
     )
 
