@@ -1,88 +1,144 @@
+from pathlib import Path
+
+from ball001.design import BALL_001
+from ball001.effective_shell import (
+    BALL001_VERIFICATION_MATERIAL,
+)
+from ball001.mesh import (
+    BALL001_MESH_SPECS,
+)
+from ball001.pressure import (
+    BALL001_NOMINAL_PRESSURE,
+)
 from ball001.structural_convergence import (
-    StructuralConvergenceResult,
-    compare_consecutive_results,
-    is_converged,
+    relative_change_percent,
+    run_structural_convergence_case,
 )
 
-CONVERGENCE_TOLERANCE = 0.01
-
-
-def print_convergence_report(
-    results: tuple[
-        StructuralConvergenceResult,
-        ...,
-    ],
-) -> None:
-    comparisons = compare_consecutive_results(
-        results
-    )
-
-    print(
-        "BALL 001 — STRUCTURAL MESH "
-        "CONVERGENCE REPORT"
-    )
-    print("=" * 72)
-
-    print(
-        f"{'Mesh':<12}"
-        f"{'Size':>10}"
-        f"{'Nodes':>12}"
-        f"{'Elements':>12}"
-        f"{'Disp.':>14}"
-    )
-
-    print("-" * 72)
-
-    for result in results:
-        print(
-            f"{result.mesh_label:<12}"
-            f"{result.characteristic_length_mm:>8.2f} mm"
-            f"{result.node_count:>12}"
-            f"{result.element_count:>12}"
-            f"{result.displacement_m * 1000:>11.4f} mm"
-        )
-
-    print()
-    print("CONSECUTIVE CHANGE")
-    print("-" * 72)
-
-    for comparison in comparisons:
-        print(
-            f"{comparison.coarse_label}"
-            f" -> {comparison.fine_label}: "
-            f"{comparison.relative_displacement_change * 100:.3f}%"
-        )
-
-    print()
-
-    converged = is_converged(
-        results,
-        tolerance=CONVERGENCE_TOLERANCE,
-    )
-
-    print(
-        "Convergence tolerance: "
-        f"{CONVERGENCE_TOLERANCE * 100:.1f}%"
-    )
-
-    print(
-        "Final convergence status: "
-        f"{'PASS' if converged else 'FAIL'}"
-    )
-
-    print()
-    print(
-        "Results must originate from actual structural "
-        "simulation runs and be classified SIMULATED."
-    )
+OUTPUT_DIRECTORY = Path(
+    "exports/fea/convergence"
+)
 
 
 def main() -> None:
-    raise SystemExit(
-        "No structural FEA results exist yet. "
-        "Run the BALL 001 structural solver first, then "
-        "pass those SIMULATED results to "
-        "print_convergence_report()."
+    results = []
+
+    for mesh_spec in BALL001_MESH_SPECS:
+        print(
+            f"Running {mesh_spec.name} "
+            f"({mesh_spec.target_size_mm:.1f} mm)..."
+        )
+
+        result = (
+            run_structural_convergence_case(
+                design=BALL_001,
+                mesh_spec=mesh_spec,
+                load_case=(
+                    BALL001_NOMINAL_PRESSURE
+                ),
+                material=(
+                    BALL001_VERIFICATION_MATERIAL
+                ),
+                output_directory=(
+                    OUTPUT_DIRECTORY
+                ),
+            )
+        )
+
+        results.append(
+            result
+        )
+
+    print()
+    print(
+        "BALL 001 — STRUCTURAL MESH "
+        "CONVERGENCE"
+    )
+    print("=" * 122)
+
+    print(
+        f"{'Mesh':<9}"
+        f"{'Size':>10}"
+        f"{'Triangles':>12}"
+        f"{'Radial u':>14}"
+        f"{'u error':>11}"
+        f"{'Δu':>10}"
+        f"{'Tangential S':>16}"
+        f"{'S error':>11}"
+        f"{'ΔS':>10}"
+        f"{'Outward':>11}"
+    )
+
+    print("-" * 122)
+
+    previous_result = None
+
+    for result in results:
+        if previous_result is None:
+            displacement_change = None
+            stress_change = None
+
+        else:
+            displacement_change = (
+                relative_change_percent(
+                    result.mean_radial_displacement_mm,
+                    previous_result.mean_radial_displacement_mm,
+                )
+            )
+
+            stress_change = (
+                relative_change_percent(
+                    result.mean_tangential_stress_n_mm2,
+                    previous_result.mean_tangential_stress_n_mm2,
+                )
+            )
+
+        displacement_change_text = (
+            "—"
+            if displacement_change is None
+            else f"{displacement_change:.3f} %"
+        )
+
+        stress_change_text = (
+            "—"
+            if stress_change is None
+            else f"{stress_change:.3f} %"
+        )
+
+        print(
+            f"{result.mesh_name:<9}"
+            f"{result.target_size_mm:>7.1f} mm"
+            f"{result.triangle_count:>12}"
+            f"{result.mean_radial_displacement_mm:>11.6f} mm"
+            f"{result.displacement_error_percent:>8.3f} %"
+            f"{displacement_change_text:>10}"
+            f"{result.mean_tangential_stress_n_mm2:>13.6f}"
+            f"{result.stress_error_percent:>8.3f} %"
+            f"{stress_change_text:>10}"
+            f"{100.0 * result.outward_node_fraction:>8.2f} %"
+        )
+
+        previous_result = result
+
+    print()
+    print(
+        "Δu and ΔS compare each mesh with the "
+        "next-coarser mesh."
+    )
+
+    print(
+        "Analytical error compares the FEA result "
+        "with the spherical-shell verification target."
+    )
+
+    print(
+        "This study verifies numerical convergence "
+        "of the artificial shell model."
+    )
+
+    print(
+        "It is not a prediction of real volleyball "
+        "material behavior."
     )
 
 
