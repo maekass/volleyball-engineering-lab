@@ -1,18 +1,36 @@
+import re
 from dataclasses import dataclass
 from math import sqrt
 from pathlib import Path
 from statistics import fmean, pstdev
 
-from ball001.calculix_deck import (
-    SolverNode,
-    load_solver_mesh,
-)
+from ball001.calculix_deck import SolverNode
 from ball001.design import BallDesign
 from ball001.effective_shell import (
     EffectiveShellMaterial,
     calculate_effective_shell_verification,
 )
+from ball001.mesh_nodes import load_mesh_nodes
 from ball001.pressure import PressureLoadCase
+
+_FRD_FLOAT_PATTERN = re.compile(
+    r"""
+    [+-]?
+    (?:
+        (?:\d+\.\d*)
+        |
+        (?:\.\d+)
+        |
+        (?:\d+)
+    )
+    (?:
+        [EeDd]
+        [+-]?
+        \d+
+    )?
+    """,
+    re.VERBOSE,
+)
 
 
 @dataclass(frozen=True)
@@ -41,17 +59,22 @@ class FrdResults:
 class CalculixVerificationResult:
     displacement_node_count: int
     stress_node_count: int
+
     mean_radial_displacement_mm: float
     radial_displacement_std_mm: float
     min_radial_displacement_mm: float
     max_radial_displacement_mm: float
+
     outward_node_fraction: float
     max_tangential_displacement_mm: float
+
     mean_tangential_stress_n_mm2: float
     tangential_stress_std_n_mm2: float
     mean_radial_stress_n_mm2: float
+
     analytical_radial_displacement_mm: float
     analytical_membrane_stress_n_mm2: float
+
     displacement_error_percent: float
     stress_error_percent: float
 
@@ -60,19 +83,45 @@ def _parse_frd_values(
     line: str,
     count: int,
 ) -> tuple[float, ...]:
+    if count <= 0:
+        raise ValueError(
+            "Requested FRD value count must be positive."
+        )
+
+    payload = line[13:]
+
+    matches = _FRD_FLOAT_PATTERN.findall(
+        payload
+    )
+
+    if len(matches) < count:
+        raise ValueError(
+            "FRD data line did not contain "
+            f"{count} numeric values: {line!r}"
+        )
+
     values = []
 
-    for index in range(count):
-        start = 13 + 12 * index
-        end = start + 12
-
-        values.append(
-            float(
-                line[start:end]
+    for token in matches[:count]:
+        normalized_token = (
+            token.replace(
+                "D",
+                "E",
+            ).replace(
+                "d",
+                "e",
             )
         )
 
-    return tuple(values)
+        values.append(
+            float(
+                normalized_token
+            )
+        )
+
+    return tuple(
+        values
+    )
 
 
 def parse_frd_results(
@@ -231,9 +280,20 @@ def _tangential_displacement_mm(
 
     ux, uy, uz = displacement_mm
 
-    tx = ux - radial_mm * nx
-    ty = uy - radial_mm * ny
-    tz = uz - radial_mm * nz
+    tx = (
+        ux
+        - radial_mm * nx
+    )
+
+    ty = (
+        uy
+        - radial_mm * ny
+    )
+
+    tz = (
+        uz
+        - radial_mm * nz
+    )
 
     return sqrt(
         tx**2
@@ -301,7 +361,7 @@ def analyze_calculix_verification(
     load_case: PressureLoadCase,
     material: EffectiveShellMaterial,
 ) -> CalculixVerificationResult:
-    solver_mesh = load_solver_mesh(
+    mesh_nodes = load_mesh_nodes(
         mesh_path
     )
 
@@ -311,7 +371,7 @@ def analyze_calculix_verification(
 
     nodes_by_tag = {
         node.tag: node
-        for node in solver_mesh.nodes
+        for node in mesh_nodes
     }
 
     radial_displacements = []
