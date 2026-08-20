@@ -1,7 +1,7 @@
-import shutil
-import subprocess
 from dataclasses import dataclass
 from pathlib import Path
+import shutil
+import subprocess
 
 from ball001.calculix_deck import (
     export_calculix_verification_deck,
