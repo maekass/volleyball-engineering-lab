@@ -14,7 +14,8 @@ env/
 .DS_Store
 
 # IDE
-.vscode/
+.vscode/*
+!.vscode/mcp.json
 
 # Generated engineering outputs
 exports/

@@ -61,6 +61,7 @@ Volley Lab demonstrates applied work across computational engineering, product d
 - **Optimization / Sensitivity:** SALib, Optuna, scikit-learn, CasADi, NLopt
 - **Experiment Tracking / Configuration:** MLflow, Hydra, Pydantic
 - **Lifecycle Analysis:** Brightway
+- **Design / Communication Toolchain:** Adobe MCP (Adobe for creativity, hosted Model Context Protocol server)
 - **Software Engineering / Reproducibility:** Git, Docker, Conda, pytest, Ruff, mypy, pre-commit
 
 ---
@@ -597,6 +598,43 @@ docker compose run --rm fenicsx bash
 - Brightway provides the framework; life-cycle inventory databases must be imported according to their own licensing terms.
 - Docker Desktop must be running before container commands work on macOS.
 - CalculiX is the current BALL 001 structural baseline pipeline. Cross-solver claims remain pending until common cases are reproduced independently in FEniCSx and, if available, ANSYS Mechanical.
+
+---
+
+## 14. Adobe MCP Design & Communication Toolchain
+
+Volley Lab uses Adobe MCP to turn engineering artifacts — structural renders, mesh views, plots, and CAD exports — into publication figures, seam-topology diagrams, and project summary graphics, directly from MCP-compatible AI clients.
+
+**Full guide:** [`integrations/adobe/README.md`](integrations/adobe/README.md) (setup, architecture, prompt recipes, security notes).
+
+### Architecture notes
+
+- **Primary server:** the official Adobe-hosted **Adobe for creativity** MCP server (`https://adobe-creativity.adobe.io/mcp`) — Streamable HTTP transport, browser OAuth, 50+ Firefly / Photoshop / Illustrator / InDesign / Express tools. No local proxy, plugin, or sidecar; no credentials stored in this repository.
+- **Checked-in client configs:** [`.mcp.json`](.mcp.json) (Claude Code, project scope), [`.cursor/mcp.json`](.cursor/mcp.json) (Cursor), and [`.vscode/mcp.json`](.vscode/mcp.json) (VS Code) all point at the same hosted endpoint, so contributors get the server on repo open.
+- **Provenance gate:** artifacts enter design sessions only through `scripts/export_adobe_handoff.py`, which copies files into the git-ignored `exports/adobe_handoff/` directory and writes a `manifest.json` recording source path, artifact kind, evidence label, and description (`src/ball001/adobe_handoff.py`, covered by `tests/test_adobe_handoff.py`).
+- **One-way flow:** designed outputs are communication artifacts. They may depict SIMULATED or MEASURED data but are neither, and they never re-enter evidence paths such as `exports/fea/` or `exports/visualization/`.
+
+### Setup steps
+
+1. Open the repo in an MCP-compatible client (Claude Code, Cursor, or VS Code) — the shipped configs register `adobe-creativity` automatically — or install the **Adobe for creativity** connector in Claude web/Desktop via *Customize → Connectors*.
+2. Complete the browser OAuth prompt on first use (`/mcp` in Claude Code). Guest mode works without an Adobe account; signing in unlocks the full toolset and higher limits.
+3. Verify with `claude mcp list` (or the client's MCP panel), then ask the assistant to list its Adobe tools.
+
+### Usage guidance
+
+1. Generate artifacts as usual (`scripts/export_structural_vtk.py`, `scripts/render_structural_results.py`, `scripts/view_*.py`).
+2. Stage them with evidence labels:
+
+   ```bash
+   python scripts/export_adobe_handoff.py \
+     --kind render --label SIMULATED \
+     --description "Radial displacement field, medium mesh, CalculiX baseline" \
+     exports/visualization/ball001_structural_verification.png
+   ```
+
+3. Run a design session using the recipes in [`integrations/adobe/prompts/`](integrations/adobe/prompts/), pasting the relevant `manifest.json` entries so evidence labels carry into figure captions (e.g. "SIMULATED — computational output, not a physical measurement").
+
+The evidence standard in §7 applies unchanged: an Adobe-designed figure is presentation, not proof.
 
 ---
 
