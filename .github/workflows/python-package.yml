@@ -28,6 +28,11 @@ jobs:
           cache: pip
           cache-dependency-path: pyproject.toml
 
+      - name: Install Linux graphics dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libglu1-mesa
+
       - name: Install project
         run: |
           python -m pip install --upgrade pip
