@@ -171,3 +171,13 @@ def test_empty_evidence_ledger_is_valid_but_has_no_passes(tmp_path: Path) -> Non
     path = tmp_path / "evidence.csv"
     path.write_text(",".join(EVIDENCE_FIELDS) + "\n", encoding="utf-8")
     assert load_evidence_csv(path) == ()
+
+
+def test_refuted_claim_also_requires_evidence(tmp_path: Path) -> None:
+    claim = ClaimRecord(
+        "CLAIM-REFUTED", "MIGRATION", "Claimed absence of migration.",
+        ClaimStatus.REFUTED, "G2_SWEAT_MIGRATION", "SAMPLE", "LOT", (),
+    )
+    result = audit_claim(claim, (), tmp_path)
+    assert not result.valid
+    assert "supported_claim_has_no_evidence_ids" in result.errors
