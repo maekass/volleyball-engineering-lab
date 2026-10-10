@@ -47,3 +47,6 @@ jobs:
 
       - name: Pytest
         run: pytest -q
+
+      - name: Evidence ledger integrity
+        run: python scripts/audit_endocrine_evidence.py
