@@ -148,3 +148,24 @@ def test_deck_updates_material_and_geometry_mode() -> None:
     )
 
     assert "*STEP,NLGEOM" in deck
+
+@pytest.mark.parametrize("pressure", [float("nan"), float("inf"), -float("inf"), 0.0, -1.0])
+def test_pressure_rejects_nonfinite_and_nonpositive_values(pressure: float) -> None:
+    with pytest.raises(ValueError):
+        PressureLevel(label="invalid", pressure_kpa=pressure)
+
+
+@pytest.mark.parametrize("label", ["", "../escape", "bad/name", "bad space"])
+def test_pressure_rejects_unsafe_case_labels(label: str) -> None:
+    with pytest.raises(ValueError):
+        PressureLevel(label=label, pressure_kpa=30.656)
+
+
+@pytest.mark.parametrize("modulus", [float("nan"), float("inf"), -5.0, 0.0])
+def test_pressure_case_rejects_invalid_material(modulus: float) -> None:
+    with pytest.raises(ValueError):
+        PressureEnvelopeCase(
+            pressure_level=PRESSURE_LEVELS[1],
+            geometry_mode=GeometryMode.LINEAR,
+            youngs_modulus_mpa=modulus,
+        )
