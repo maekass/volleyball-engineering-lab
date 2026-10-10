@@ -70,22 +70,38 @@ def test_external_dermal_exposure_requires_product_measurement() -> None:
         estimate_external_dermal_exposure(analogue, scenario)
 
 
-def test_external_exposure_is_not_absorbed_without_uptake_factor() -> None:
+def test_external_exposure_is_not_absorbed_without_uptake_factor(
+    audited_migration_case,
+) -> None:
+    record, root = audited_migration_case
     scenario = ContactScenario(360.0, 7.0, 200.0, 50.0, 0.5)
-    measurement = MigrationMeasurement("example", 0.2, "synthetic sweat", 37.0)
-    result = estimate_external_dermal_exposure(measurement, scenario)
+    measurement = MigrationMeasurement(
+        "example", 0.2, "synthetic sweat", 37.0,
+        EvidenceBasis.PRODUCT_MEASURED, record.record_id
+    )
+    result = estimate_external_dermal_exposure(
+        measurement, scenario, evidence_record=record, evidence_root=root
+    )
     assert result.external_ug_per_day == pytest.approx(2.0)
     assert result.external_ug_per_kg_day == pytest.approx(0.04)
     assert result.absorbed_ug_per_kg_day is None
 
 
-def test_absorbed_estimate_requires_explicit_absorption_fraction() -> None:
+def test_absorbed_estimate_requires_explicit_absorption_fraction(
+    audited_migration_case,
+) -> None:
+    record, root = audited_migration_case
     scenario = ContactScenario(360.0, 7.0, 200.0, 50.0, 0.5)
-    measurement = MigrationMeasurement("example", 0.2, "synthetic sweat", 37.0)
+    measurement = MigrationMeasurement(
+        "example", 0.2, "synthetic sweat", 37.0,
+        EvidenceBasis.PRODUCT_MEASURED, record.record_id
+    )
     result = estimate_external_dermal_exposure(
         measurement,
         scenario,
         dermal_absorption_fraction=0.1,
+        evidence_record=record,
+        evidence_root=root,
     )
     assert result.absorbed_ug_per_kg_day == pytest.approx(0.004)
 
@@ -134,3 +150,26 @@ def test_complete_evidence_chain_does_not_use_safe_language() -> None:
     assert "safe" not in " ".join(
         decision.reason.lower() for decision in decisions
     )
+
+
+def test_exposure_rejects_missing_audit_even_when_labeled_measured() -> None:
+    scenario = ContactScenario(360.0, 7.0, 200.0, 50.0, 0.5)
+    claimed = MigrationMeasurement(
+        "example", 0.2, "synthetic sweat", 37.0,
+        EvidenceBasis.PRODUCT_MEASURED, "EVID-CLAIMED"
+    )
+    with pytest.raises(ValueError, match="audited G2"):
+        estimate_external_dermal_exposure(claimed, scenario)
+
+
+def test_exposure_rejects_fabricated_rate(audited_migration_case) -> None:
+    record, root = audited_migration_case
+    scenario = ContactScenario(360.0, 7.0, 200.0, 50.0, 0.5)
+    fabricated = MigrationMeasurement(
+        "example", 20.0, "synthetic sweat", 37.0,
+        EvidenceBasis.PRODUCT_MEASURED, record.record_id
+    )
+    with pytest.raises(ValueError, match="differs"):
+        estimate_external_dermal_exposure(
+            fabricated, scenario, evidence_record=record, evidence_root=root
+        )
