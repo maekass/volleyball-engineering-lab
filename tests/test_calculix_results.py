@@ -183,3 +183,17 @@ def test_missing_frd_is_rejected(
             tmp_path
             / "missing.frd"
         )
+
+@pytest.mark.parametrize("bad_token", ["NaN", "Infinity"])
+def test_rejects_nonfinite_frd_fields(tmp_path: Path, bad_token: str) -> None:
+    path = tmp_path / "nonfinite.frd"
+    line = _frd_data_line(1, (0.01, 0.02, 0.03))
+    line = line.replace("1.00000E-02", bad_token.rjust(12), 1)
+    path.write_text(
+        " -4  DISP\n" + line + " -3\n"
+        + " -4  STRESS\n"
+        + _frd_data_line(1, (1.0, 2.0, 3.0, 0.1, 0.2, 0.3))
+        + " -3\n"
+    )
+    with pytest.raises(ValueError):
+        parse_frd_results(path)
