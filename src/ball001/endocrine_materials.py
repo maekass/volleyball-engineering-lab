@@ -17,6 +17,8 @@ from enum import StrEnum
 from pathlib import Path
 from statistics import fmean
 
+from ball001.research_integrity import EvidenceRecord, verified_migration_row
+
 
 class GateStatus(StrEnum):
     """State of a sequential evidence gate."""
@@ -147,7 +149,8 @@ class MigrationMeasurement:
     migration_rate_ug_cm2_h: float
     medium: str
     temperature_c: float
-    evidence_basis: EvidenceBasis = EvidenceBasis.PRODUCT_MEASURED
+    evidence_basis: EvidenceBasis = EvidenceBasis.HYPOTHESIS
+    evidence_record_id: str = ""
 
     def __post_init__(self) -> None:
         if self.migration_rate_ug_cm2_h < 0:
@@ -185,14 +188,31 @@ def estimate_external_dermal_exposure(
     scenario: ContactScenario,
     *,
     dermal_absorption_fraction: float | None = None,
+    evidence_record: EvidenceRecord | None = None,
+    evidence_root: Path | None = None,
 ) -> ExternalDermalEstimate:
-    """Estimate exposure; this is not a health-risk conclusion."""
+    """Screen external exposure only from a hash-audited product assay."""
 
     if measurement.evidence_basis is not EvidenceBasis.PRODUCT_MEASURED:
         raise ValueError(
             "Dose estimation requires a product-measured migration rate, not an "
             "analogue or hypothesis."
         )
+    if evidence_record is None or evidence_root is None:
+        raise ValueError("Exposure calculation requires audited G2 evidence.")
+    if (
+        not measurement.evidence_record_id
+        or measurement.evidence_record_id != evidence_record.record_id
+    ):
+        raise ValueError("Migration evidence record ID mismatch.")
+    verified_migration_row(
+        evidence_record,
+        evidence_root,
+        target=measurement.target,
+        migration_rate_ug_cm2_h=measurement.migration_rate_ug_cm2_h,
+        medium=measurement.medium,
+        temperature_c=measurement.temperature_c,
+    )
     if dermal_absorption_fraction is not None and not (
         0 <= dermal_absorption_fraction <= 1
     ):
