@@ -10,7 +10,6 @@ import pytest
 from ball001.research_integrity import (
     ClaimRecord,
     ClaimStatus,
-    EvidenceRecord,
     ReviewOutcome,
     audit_claim,
     audit_evidence,
