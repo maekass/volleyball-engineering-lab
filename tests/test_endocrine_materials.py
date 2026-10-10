@@ -173,3 +173,10 @@ def test_exposure_rejects_fabricated_rate(audited_migration_case) -> None:
         estimate_external_dermal_exposure(
             fabricated, scenario, evidence_record=record, evidence_root=root
         )
+
+
+def test_nan_contact_and_migration_inputs_are_rejected() -> None:
+    with pytest.raises(ValueError, match="finite"):
+        ContactScenario(float("nan"), 7.0, 200.0, 70.0)
+    with pytest.raises(ValueError, match="finite"):
+        MigrationMeasurement("example", float("nan"), "sweat", 37.0)
