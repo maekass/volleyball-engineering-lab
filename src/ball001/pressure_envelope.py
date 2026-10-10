@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from math import isfinite
 
 from ball001.nonlinear_stiffness_sweep import (
     GeometryMode,
@@ -13,7 +14,9 @@ class PressureLevel:
     pressure_kpa: float
 
     def __post_init__(self) -> None:
-        if self.pressure_kpa <= 0.0:
+        if not self.label or not self.label.replace("_", "").isalnum():
+            raise ValueError("Pressure label must be alphanumeric or underscore.")
+        if not isfinite(self.pressure_kpa) or self.pressure_kpa <= 0.0:
             raise ValueError(
                 "Pressure must be positive."
             )
@@ -33,6 +36,10 @@ class PressureEnvelopeCase:
 
     youngs_modulus_mpa: float = 20.0
     poisson_ratio: float = 0.35
+
+    def __post_init__(self) -> None:
+        # Reuse the full material and solver-increment validation.
+        self.stiffness_case()
 
     @property
     def solver_name(self) -> str:
@@ -108,6 +115,8 @@ def _replace_pressure_load(
     deck_text: str,
     pressure_n_mm2: float,
 ) -> str:
+    if not isfinite(pressure_n_mm2) or pressure_n_mm2 <= 0:
+        raise ValueError("Pressure load must be finite and positive.")
     lines = deck_text.splitlines(
         keepends=True
     )
