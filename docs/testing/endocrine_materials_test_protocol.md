@@ -323,3 +323,27 @@ The final engineering question is not “is the ball chemical-free?” It is:
 **can every decision-relevant exposure pathway be bounded with evidence, and
 can the design reduce avoidable chemical migration without sacrificing the
 performance athletes trust?**
+
+
+## 16. Research governance and audit requirements
+
+The full dissertation-level question set, evidence hierarchy, reproducible
+search strategy, statistical analysis plan and preregistration template are
+documented separately:
+
+- [Fifteen scientific questions and evidence gates](../research/evidence_gates_15_questions.md)
+- [Literature-review protocol](../research/literature_review_protocol.md)
+- [Experimental design and statistical plan](experimental_design_and_statistics.md)
+- [Preregistration template](../research/preregistration_template.md)
+- [Evidence provenance architecture](../research/research_integrity_architecture.md)
+
+The G0–G6 gates in this protocol are **scientific evidence requirements**.
+The Python evidence audit checks provenance completeness and QC; it cannot
+substitute for laboratory method validation, qualified toxicology, or
+independent replication. Physical testing is not complete, and no commercial
+volleyball has been shown by this repository to contain or release any
+watchlist chemical.
+
+A **negative** chemical finding is informative only when reported with the
+actual analytical method, detection/quantification limits, specimen scope,
+conditions, and uncertainty. Do not report non-detect as zero.
