@@ -1,0 +1,1 @@
+sample_id,lot_id,specimen_id,layer_id,target,medium,temperature_c,pressure_kpa,contact_state,time_h,cumulative_release_ug_cm2,lod_ug_cm2,loq_ug_cm2,analytical_qc_record_id,evidence_record_id,raw_data_sha256
