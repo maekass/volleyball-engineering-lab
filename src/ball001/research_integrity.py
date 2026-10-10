@@ -12,7 +12,7 @@ import csv
 import hashlib
 import math
 from dataclasses import dataclass
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from enum import StrEnum
 from pathlib import Path
 
@@ -177,7 +177,7 @@ def audit_evidence(record: EvidenceRecord, root: Path) -> AuditResult:
     else:
         try:
             reviewed = date.fromisoformat(record.reviewed_on)
-            if reviewed > datetime.now(timezone.utc).date():
+            if reviewed > datetime.now(UTC).date():
                 errors.append("review_date_in_future")
         except ValueError:
             errors.append("invalid_review_date")
