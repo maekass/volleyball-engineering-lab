@@ -5,10 +5,10 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from ball001.endocrine_materials import (
-    EvidenceGateInputs,
-    evaluate_evidence_gates,
-    load_watchlist,
+from ball001.endocrine_materials import load_watchlist
+from ball001.research_integrity import (
+    evaluate_specimen_gates,
+    load_evidence_csv,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -31,11 +31,19 @@ def build_report(watchlist_path: Path) -> str:
             f"presence={target.product_presence}"
         )
 
-    lines.extend(["", "## Evidence gates"])
-    for decision in evaluate_evidence_gates(EvidenceGateInputs()):
-        lines.append(
-            f"- {decision.gate}: {decision.status} — {decision.reason}"
-        )
+    lines.extend(["", "## Evidence gates (artifact-audited)"])
+    records = load_evidence_csv(ROOT / "data" / "research_evidence.csv")
+    specimens = sorted({(r.sample_id, r.lot_id) for r in records})
+    if not specimens:
+        lines.append("- NO_PRODUCT_MEASUREMENTS_REGISTERED")
+    for sample_id, lot_id in specimens:
+        lines.append(f"### Specimen {sample_id} / lot {lot_id}")
+        for decision in evaluate_specimen_gates(
+            records, ROOT, sample_id=sample_id, lot_id=lot_id
+        ):
+            lines.append(
+                f"- {decision.gate}: {decision.status} — {decision.reason}"
+            )
     lines.extend(
         [
             "",
