@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
+from math import isfinite
 
 
 class GeometryMode(str, Enum):
@@ -19,12 +20,12 @@ class StiffnessSweepCase:
     maximum_increment: float = 0.10
 
     def __post_init__(self) -> None:
-        if self.youngs_modulus_mpa <= 0.0:
+        if not isfinite(self.youngs_modulus_mpa) or self.youngs_modulus_mpa <= 0.0:
             raise ValueError(
                 "Young's modulus must be positive."
             )
 
-        if not (
+        if not isfinite(self.poisson_ratio) or not (
             -1.0
             < self.poisson_ratio
             < 0.5
@@ -34,22 +35,22 @@ class StiffnessSweepCase:
                 "-1.0 and 0.5."
             )
 
-        if self.initial_increment <= 0.0:
+        if not isfinite(self.initial_increment) or self.initial_increment <= 0.0:
             raise ValueError(
                 "Initial increment must be positive."
             )
 
-        if self.time_period <= 0.0:
+        if not isfinite(self.time_period) or self.time_period <= 0.0:
             raise ValueError(
                 "Time period must be positive."
             )
 
-        if self.minimum_increment <= 0.0:
+        if not isfinite(self.minimum_increment) or self.minimum_increment <= 0.0:
             raise ValueError(
                 "Minimum increment must be positive."
             )
 
-        if self.maximum_increment <= 0.0:
+        if not isfinite(self.maximum_increment) or self.maximum_increment <= 0.0:
             raise ValueError(
                 "Maximum increment must be positive."
             )
