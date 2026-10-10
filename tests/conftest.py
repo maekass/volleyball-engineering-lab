@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import csv
-from datetime import date
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -69,7 +69,7 @@ def audited_migration_case(tmp_path: Path) -> tuple[EvidenceRecord, Path]:
         qc_path="qc.csv",
         qc_sha256=file_sha256(qc),
         reviewer="Unit-test reviewer",
-        reviewed_on=date.today().isoformat(),
+        reviewed_on=datetime.now(timezone.utc).date().isoformat(),
         review_outcome=ReviewOutcome.ACCEPTED,
     )
     return record, tmp_path
