@@ -12,6 +12,7 @@ material identity -> total content -> migration -> transfer/uptake -> dose conte
 from __future__ import annotations
 
 import csv
+import math
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
@@ -64,6 +65,15 @@ class ContactScenario:
     transfer_efficiency_fraction: float = 1.0
 
     def __post_init__(self) -> None:
+        values = (
+            self.cumulative_contact_seconds_per_session,
+            self.sessions_per_week,
+            self.contact_area_cm2,
+            self.body_mass_kg,
+            self.transfer_efficiency_fraction,
+        )
+        if not all(math.isfinite(v) for v in values):
+            raise ValueError("Contact scenario must contain finite values.")
         if self.cumulative_contact_seconds_per_session < 0:
             raise ValueError("Cumulative contact time must be non-negative.")
         if self.sessions_per_week < 0:
@@ -90,6 +100,11 @@ class MigrationReplicate:
     duration_h: float
 
     def __post_init__(self) -> None:
+        if not all(
+            math.isfinite(v)
+            for v in (self.migrated_mass_ug, self.exposed_area_cm2, self.duration_h)
+        ):
+            raise ValueError("Migration replicate must contain finite values.")
         if self.migrated_mass_ug < 0:
             raise ValueError("Migrated mass must be non-negative.")
         if self.exposed_area_cm2 <= 0:
@@ -109,12 +124,30 @@ class QCCriteria:
     max_spike_recovery_percent: float
     max_duplicate_rpd_percent: float
 
+    def __post_init__(self) -> None:
+        values = (
+            self.max_blank_ug, self.min_spike_recovery_percent,
+            self.max_spike_recovery_percent, self.max_duplicate_rpd_percent,
+        )
+        if not all(math.isfinite(v) and v >= 0 for v in values):
+            raise ValueError("QC criteria must be finite and non-negative.")
+        if self.min_spike_recovery_percent > self.max_spike_recovery_percent:
+            raise ValueError("Invalid spike recovery acceptance range.")
+
 
 @dataclass(frozen=True)
 class LabQualityControl:
     blank_ug: float
     spike_recovery_percent: float
     duplicate_rpd_percent: float
+
+    def __post_init__(self) -> None:
+        values = (
+            self.blank_ug, self.spike_recovery_percent,
+            self.duplicate_rpd_percent,
+        )
+        if not all(math.isfinite(v) and v >= 0 for v in values):
+            raise ValueError("QC measurements must be finite and non-negative.")
 
 
 @dataclass(frozen=True)
@@ -153,6 +186,11 @@ class MigrationMeasurement:
     evidence_record_id: str = ""
 
     def __post_init__(self) -> None:
+        if not all(
+            math.isfinite(v)
+            for v in (self.migration_rate_ug_cm2_h, self.temperature_c)
+        ):
+            raise ValueError("Migration measurement must be finite.")
         if self.migration_rate_ug_cm2_h < 0:
             raise ValueError("Migration rate must be non-negative.")
 
@@ -214,7 +252,8 @@ def estimate_external_dermal_exposure(
         temperature_c=measurement.temperature_c,
     )
     if dermal_absorption_fraction is not None and not (
-        0 <= dermal_absorption_fraction <= 1
+        math.isfinite(dermal_absorption_fraction)
+        and 0 <= dermal_absorption_fraction <= 1
     ):
         raise ValueError("Dermal absorption fraction must be between 0 and 1.")
 
@@ -243,6 +282,11 @@ class DoseContext:
     reference_ug_per_kg_day: float
 
     def __post_init__(self) -> None:
+        if not all(
+            math.isfinite(v)
+            for v in (self.absorbed_ug_per_kg_day, self.reference_ug_per_kg_day)
+        ):
+            raise ValueError("Dose context must be finite.")
         if self.absorbed_ug_per_kg_day < 0:
             raise ValueError("Absorbed dose must be non-negative.")
         if self.reference_ug_per_kg_day <= 0:
@@ -261,6 +305,11 @@ class EngineeringConstraint:
     relative_tolerance: float
 
     def __post_init__(self) -> None:
+        if not all(
+            math.isfinite(v)
+            for v in (self.baseline_value, self.candidate_value, self.relative_tolerance)
+        ):
+            raise ValueError("Engineering constraint must be finite.")
         if self.baseline_value == 0:
             raise ValueError("Baseline value cannot be zero.")
         if self.relative_tolerance < 0:
@@ -306,7 +355,11 @@ class GateDecision:
 def evaluate_evidence_gates(
     inputs: EvidenceGateInputs,
 ) -> tuple[GateDecision, ...]:
-    """PASS means the evidence requirement exists; it never means safe."""
+    """Illustrative checklist ONLY; use audited specimen gates for claims.
+
+    These Boolean inputs are not evidence records. PASS here never authorizes
+    a product measurement, exposure, safety or health conclusion.
+    """
 
     checks = (
         ("G0_MATERIAL_IDENTITY", inputs.material_identity_confirmed,
