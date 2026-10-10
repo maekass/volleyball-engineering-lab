@@ -798,6 +798,29 @@ Research artifacts:
 - [Chemical watchlist](data/endocrine_materials_watchlist.csv)
 - [Laboratory measurement CSV template](data/endocrine_materials_measurements_template.csv)
 - [Markdown screening report generator](scripts/endocrine_materials_report.py)
+- [Fifteen dissertation-level evidence questions](docs/research/evidence_gates_15_questions.md)
+- [Reproducible literature-review protocol](docs/research/literature_review_protocol.md)
+- [Experimental design, QA/QC and statistical plan](docs/testing/experimental_design_and_statistics.md)
+- [Research preregistration template](docs/research/preregistration_template.md)
+- [Evidence provenance and claim-integrity architecture](docs/research/research_integrity_architecture.md)
+- [Hash-verified evidence/claim audit engine](src/ball001/research_integrity.py)
+- [1D Fickian diffusion and intermittent-contact model](src/ball001/diffusion_transport.py)
+- [Censored analytical results and equivalence logic](src/ball001/research_statistics.py)
+- [Executable evidence audit CLI](scripts/audit_endocrine_evidence.py)
+- [Pending claim ledger](data/research_claims.csv) and [empty evidence ledger](data/research_evidence.csv)
+- [Specimen manifest](data/sample_manifest_template.csv), [literature screening](data/literature_screening_template.csv) and [migration time series](data/migration_timeseries_template.csv) templates
+
+**Research integrity:** The new audit rejects missing or hash-mismatched
+evidence, failed numerical QC, wrong specimen/lot, unsupported claims and
+migration inputs that differ from the reviewed assay record. The ledger has
+no product measurements. A green CI run is software verification, **not**
+analytical chemistry, exposure validation, or a health-risk determination.
+
+```bash
+python scripts/audit_endocrine_evidence.py
+# --strict intentionally fails until all physical evidence gates are satisfied
+python scripts/audit_endocrine_evidence.py --strict
+```
 
 The governing evidence sequence is:
 
