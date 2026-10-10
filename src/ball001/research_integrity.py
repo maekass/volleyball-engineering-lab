@@ -249,7 +249,7 @@ def audit_claim(
 ) -> AuditResult:
     """Prevent a literature or analogue claim from masquerading as product data."""
 
-    if claim.status is not ClaimStatus.SUPPORTED:
+    if claim.status is ClaimStatus.PENDING:
         return AuditResult(True, ())
     errors: list[str] = []
     if claim.claim_type == "HEALTH_CAUSATION":
