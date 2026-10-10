@@ -1,0 +1,1 @@
+record_id,gate,kind,sample_id,lot_id,method_id,artifact_path,artifact_sha256,raw_path,raw_sha256,calibration_path,calibration_sha256,qc_path,qc_sha256,reviewer,reviewed_on,review_outcome

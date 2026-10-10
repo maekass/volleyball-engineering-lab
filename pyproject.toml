@@ -10,11 +10,16 @@ requires-python = ">=3.11"
 
 dependencies = [
     "cadquery==2.8.0",
+    "gmsh==4.15.2",
+    "numpy==2.4.6; python_version == '3.11'",
+    "numpy==2.5.2; python_version >= '3.12'",
+    "pyvista==0.48.4",
 ]
+
 [project.optional-dependencies]
 dev = [
-    "pytest",
-    "ruff",
+    "pytest==9.1.1",
+    "ruff==0.16.4",
 ]
 
 [tool.setuptools.packages.find]
@@ -25,3 +30,4 @@ testpaths = ["tests"]
 
 [tool.ruff]
 line-length = 88
+target-version = "py311"

@@ -771,3 +771,63 @@ The abstract topology studies remain in the repository because they document
 the computational development process and provide useful control cases. Future
 volleyball-specific geometry will build on those methods rather than silently
 replacing or relabeling them.
+
+
+---
+
+## 15. Women's Athlete Health + Materials Exposure Research Track
+
+BALL 001 now includes an evidence-gated research track examining a narrow but
+under-characterized product question: whether repeatedly handled volleyball
+materials release measurable quantities of selected endocrine-active or
+reproductive-hazard chemicals under realistic use conditions, and whether
+materials engineering can reduce avoidable migration without degrading elite
+ball performance.
+
+This is **not** a claim that commercial volleyballs cause endocrine
+disruption. The current research gap is the absence of a product-specific
+chain from material identity to migration, realistic contact exposure, dermal
+uptake, dose context, and mechanical equivalence.
+
+Research artifacts:
+
+- [Women's athlete health evidence map](docs/research/womens_athlete_health_evidence_map.md)
+- [Volleyball endocrine-materials research paper](docs/research/volleyball_endocrine_materials_review.md)
+- [Endocrine-active materials testing protocol](docs/testing/endocrine_materials_test_protocol.md)
+- [Evidence-gate / exposure backend](src/ball001/endocrine_materials.py)
+- [Chemical watchlist](data/endocrine_materials_watchlist.csv)
+- [Laboratory measurement CSV template](data/endocrine_materials_measurements_template.csv)
+- [Markdown screening report generator](scripts/endocrine_materials_report.py)
+- [Fifteen dissertation-level evidence questions](docs/research/evidence_gates_15_questions.md)
+- [Reproducible literature-review protocol](docs/research/literature_review_protocol.md)
+- [Experimental design, QA/QC and statistical plan](docs/testing/experimental_design_and_statistics.md)
+- [Research preregistration template](docs/research/preregistration_template.md)
+- [Evidence provenance and claim-integrity architecture](docs/research/research_integrity_architecture.md)
+- [Hash-verified evidence/claim audit engine](src/ball001/research_integrity.py)
+- [1D Fickian diffusion and intermittent-contact model](src/ball001/diffusion_transport.py)
+- [Censored analytical results and equivalence logic](src/ball001/research_statistics.py)
+- [Executable evidence audit CLI](scripts/audit_endocrine_evidence.py)
+- [Pending claim ledger](data/research_claims.csv) and [empty evidence ledger](data/research_evidence.csv)
+- [Specimen manifest](data/sample_manifest_template.csv), [literature screening](data/literature_screening_template.csv) and [migration time series](data/migration_timeseries_template.csv) templates
+
+**Research integrity:** The new audit rejects missing or hash-mismatched
+evidence, failed numerical QC, wrong specimen/lot, unsupported claims and
+migration inputs that differ from the reviewed assay record. The ledger has
+no product measurements. A green CI run is software verification, **not**
+analytical chemistry, exposure validation, or a health-risk determination.
+
+```bash
+python scripts/audit_endocrine_evidence.py
+# --strict intentionally fails until all physical evidence gates are satisfied
+python scripts/audit_endocrine_evidence.py --strict
+```
+
+The governing evidence sequence is:
+
+**material identity → total content → migration → realistic transfer → dermal
+uptake → dose context → engineering equivalence**
+
+No health-risk statement is permitted before dose context, and no
+lower-migration material is accepted into BALL 001 solely on chemistry: it
+must also satisfy the mechanical and durability requirements that define the
+product.

@@ -1,0 +1,4 @@
+claim_id,claim_type,claim_text,status,gate,sample_id,lot_id,evidence_ids
+HYP-001,HYPOTHESIS,Selected chemicals may be detectable in specific volleyball layers,PENDING,,,,
+HYP-002,HYPOTHESIS,Some identified substances may migrate under skin relevant conditions,PENDING,,,,
+HYP-003,HYPOTHESIS,Lower migration materials may preserve elite ball mechanics,PENDING,,,,

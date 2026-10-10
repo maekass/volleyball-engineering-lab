@@ -1,0 +1,12 @@
+target,cas,chemical_class,health_domain,material_relevance,preferred_screen,product_presence,evidence_basis,source
+DEHP,117-81-7,ortho-phthalate,endocrine/reproductive,"Plasticised polymers, adhesives, sealants, rubber; ECHA identifies sports equipment as a possible phthalate use category",GC-MS,UNKNOWN,REGULATORY,https://echa.europa.eu/hot-topics/phthalates
+DBP,84-74-2,ortho-phthalate,endocrine/reproductive,"Plasticised polymers, adhesives, coatings and rubber",GC-MS,UNKNOWN,REGULATORY,https://echa.europa.eu/hot-topics/phthalates
+BBP,85-68-7,ortho-phthalate,endocrine/reproductive,"Plasticised polymers and flexible material formulations",GC-MS,UNKNOWN,REGULATORY,https://echa.europa.eu/hot-topics/phthalates
+DIBP,84-69-5,ortho-phthalate,endocrine/reproductive,"Plasticised polymers, adhesives and coatings",GC-MS,UNKNOWN,REGULATORY,https://echa.europa.eu/hot-topics/phthalates
+DINP,28553-12-0,ortho-phthalate,regulated/reproductive concern,"Flexible plastics and rubber formulations; broader plasticizer screen",GC-MS,UNKNOWN,LITERATURE,https://pubmed.ncbi.nlm.nih.gov/35248714/
+Bisphenol A,80-05-7,bisphenol,endocrine,"Possible in certain polymer/epoxy systems; relevance must be established by material identity",LC-MS/MS,UNKNOWN,LITERATURE,https://pubmed.ncbi.nlm.nih.gov/35248714/
+Bisphenol S,80-09-1,bisphenol,endocrine,"Potential BPA replacement; screen only when resin/additive context justifies it",LC-MS/MS,UNKNOWN,LITERATURE,https://pubmed.ncbi.nlm.nih.gov/33313651/
+Bisphenol F,620-92-8,bisphenol,endocrine,"Potential bisphenol analogue in resin systems",LC-MS/MS,UNKNOWN,LITERATURE,https://pubmed.ncbi.nlm.nih.gov/28557831/
+4-tert-Octylphenol,140-66-9,alkylphenol,endocrine,"Observed in rubber-granulate migration work; analogue sentinel, not volleyball presence claim",LC-MS/MS,UNKNOWN,MATERIAL_ANALOGUE,https://pubmed.ncbi.nlm.nih.gov/32092510/
+EU REACH 8 PAHs,GROUP,PAH,carcinogenic/chemical safety,"Rubber/plastic skin-contact articles; non-endocrine co-hazard",GC-MS,UNKNOWN,REGULATORY,https://echa.europa.eu/documents/10162/4f099937-658f-8b86-2f62-5e767fab4d6e
+Residual MDI/TDI,GROUP,isocyanate,sensitization/non-endocrine,"If polyurethane chemistry is confirmed; separate chemical-safety question",HPLC-UV-MS or validated equivalent,UNKNOWN,MATERIAL_ANALOGUE,https://pubmed.ncbi.nlm.nih.gov/32145637/
