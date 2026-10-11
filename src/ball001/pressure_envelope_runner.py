@@ -1,5 +1,6 @@
 import shutil
 import subprocess
+import time
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -16,12 +17,14 @@ class PressureEnvelopeRunResult:
     job_finished: bool
     stdout: str
     stderr: str
+    results_fresh: bool = False
 
     @property
     def succeeded(self) -> bool:
         return (
             self.return_code == 0
             and self.job_finished
+            and self.results_fresh
         )
 
 
@@ -56,6 +59,9 @@ def run_pressure_envelope_case(
     if executable is None:
         executable = find_calculix_executable()
 
+    frd_path = working_directory / f"{case.solver_name}.frd"
+    started_ns = time.time_ns()
+
     completed = subprocess.run(
         [
             executable,
@@ -84,6 +90,11 @@ def run_pressure_envelope_case(
         ),
         stdout=completed.stdout,
         stderr=completed.stderr,
+        results_fresh=(
+            frd_path.is_file()
+            and frd_path.stat().st_size > 0
+            and frd_path.stat().st_mtime_ns >= started_ns
+        ),
     )
 
 

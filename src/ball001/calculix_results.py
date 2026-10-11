@@ -1,6 +1,6 @@
 import re
 from dataclasses import dataclass
-from math import sqrt
+from math import isfinite, sqrt
 from pathlib import Path
 from statistics import fmean, pstdev
 
@@ -118,6 +118,9 @@ def _parse_frd_values(
                 normalized_token
             )
         )
+
+    if not all(isfinite(value) for value in values):
+        raise ValueError("FRD contains nonfinite numerical results.")
 
     return tuple(
         values
@@ -373,6 +376,20 @@ def analyze_calculix_verification(
         node.tag: node
         for node in mesh_nodes
     }
+
+    if len(nodes_by_tag) != len(mesh_nodes):
+        raise ValueError("Mesh contains duplicate node IDs.")
+
+    for field_name, records in (
+        ("displacement", frd_results.displacements_mm),
+        ("stress", frd_results.stresses_n_mm2),
+    ):
+        unknown = set(records).difference(nodes_by_tag)
+        if unknown:
+            raise ValueError(
+                f"FRD {field_name} results reference {len(unknown)} "
+                "nodes absent from the mesh."
+            )
 
     radial_displacements = []
     tangential_displacements = []
