@@ -41,7 +41,7 @@ The 25/25/20 weights are the workflow, catalyst, and exit weights in the mandate
 
 ## Provenance
 
-Every stored signal carries a non-null `http` or `https` source URL, a timezone-aware retrieval timestamp, and a SHA-256 of the canonical JSON payload. Naive timestamps and empty URLs are rejected in `db/provenance.py` and by the SQLite schema. Retrieval time for the seeded database is fixed at 2026-11-27 15:00 UTC so the file can be rebuilt.
+Every stored signal carries an `http` or `https` source URL, a timezone-aware retrieval timestamp, and a SHA-256 of the canonical JSON payload. Naive timestamps are rejected in `db/provenance.py`. A SQLite `CHECK` on `source_url` rejects NULL, blank, and non-HTTP values on signals, targets, benchmarks, and diligence scores. Retrieval time for the seeded database is fixed at 2026-11-27 15:00 UTC so the file can be rebuilt.
 
 ## Precedent ledger
 
@@ -72,7 +72,7 @@ A claim is z-scored only when cohort, position, metric, and unit match and the b
 
 Clients take an `httpx.Client`, so tests run on a mock transport and a live pull is a deliberate call.
 
-- `ingest/openalex_msk.py` — OpenAlex works search: volleyball with jump, patellar, ACL, IMU, and optical terms. Records without an HTTP identifier are rejected.
+- `ingest/openalex_msk.py` — OpenAlex works search. Volleyball is required. Jump, patellar, ACL, IMU, and optical are alternatives (`OR`), because a bare word list is an `AND`. Records without an HTTP identifier are rejected.
 - `ingest/patents_grants.py` — PatentsView query on CPC A63B and G06V with volleyball in the abstract. NSF award search filtered to SBIR and STTR program names.
 - `ingest/ncaa_rules.py` — local PDF text. Spaced NCAA numbering (`15 .2 .4 .3`) is normalized before rule 15.2.4.3, 1.2.2.4, and 18.1.4.7 are extracted. The rules books are not vendored.
 

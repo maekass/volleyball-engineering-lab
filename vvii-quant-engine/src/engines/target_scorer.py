@@ -17,6 +17,9 @@ _WEIGHTS = {
     "catalyst": Decimal("0.25"),
     "exit_path": Decimal("0.20"),
 }
+_ACQUIRER_CANONICAL = {
+    "orthopedic health systems": "orthopedic health system",
+}
 _STRATEGIC = {
     "hudl",
     "otto sport",
@@ -24,7 +27,6 @@ _STRATEGIC = {
     "seatgeek",
     "paciolan",
     "orthopedic health system",
-    "orthopedic health systems",
 }
 _FORCE_PLATE_R = Decimal("0.85")
 
@@ -77,7 +79,8 @@ def _q4(value: Decimal) -> Decimal:
 
 
 def _normalize_acquirer(name: str) -> str:
-    return " ".join(name.casefold().split())
+    normalized = " ".join(name.casefold().split())
+    return _ACQUIRER_CANONICAL.get(normalized, normalized)
 
 
 def technical_ingestion_score(evidence: TargetEvidence) -> Decimal:
@@ -158,9 +161,11 @@ def exit_path_score(evidence: TargetEvidence) -> Decimal:
 
 def evidence_payload(evidence: TargetEvidence) -> dict:
     payload = evidence.model_dump(mode="json")
-    payload["named_acquirers"] = sorted(
+    canonical = {
         _normalize_acquirer(name) for name in evidence.named_acquirers
-    )
+    }
+    canonical.discard("")
+    payload["named_acquirers"] = sorted(canonical)
     return payload
 
 

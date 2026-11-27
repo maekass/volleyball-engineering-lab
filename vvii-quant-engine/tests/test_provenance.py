@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sqlite3
 from datetime import UTC, datetime
 from decimal import Decimal
 from pathlib import Path
@@ -214,6 +215,70 @@ def test_database_rejects_null_source_url_and_stores_score_hash(tmp_path: Path) 
         )
         with pytest.raises(IntegrityError):
             session.commit()
+
+
+@pytest.mark.parametrize("source_url", ["", "ftp://example.edu/rules.pdf", "notaurl"])
+def test_database_check_rejects_non_http_source_url(tmp_path: Path, source_url: str) -> None:
+    path = tmp_path / "vvii_intel.db"
+    seed_database(path)
+    factory = session_factory(create_engine_for(path))
+    with factory() as session:
+        session.add(
+            Signal(
+                signal_type="rule",
+                title="non-http source",
+                source_url=source_url,
+                retrieved_at=AS_OF,
+                content_sha256="0" * 64,
+                payload_json="{}",
+            )
+        )
+        with pytest.raises(IntegrityError):
+            session.commit()
+
+
+def test_bundled_database_rejects_blank_source_url(tmp_path: Path) -> None:
+    source = ENGINE_ROOT / "data" / "vvii_intel.db"
+    copy = tmp_path / "vvii_intel.db"
+    copy.write_bytes(source.read_bytes())
+    connection = sqlite3.connect(copy)
+    ddl = connection.execute(
+        "SELECT sql FROM sqlite_master WHERE name = 'signals'"
+    ).fetchone()[0]
+    assert "ck_signals_source_url_http" in ddl
+    with pytest.raises(sqlite3.IntegrityError):
+        connection.execute(
+            "INSERT INTO signals (signal_type, title, source_url, retrieved_at, "
+            "content_sha256, payload_json) VALUES (?, ?, ?, ?, ?, ?)",
+            ("rule", "blank", "", "2026-11-27 15:00:00", "0" * 64, "{}"),
+        )
+    connection.close()
+
+
+def test_orthopedic_alias_counts_as_one_acquirer() -> None:
+    shared = {
+        "exports_live_dvw": False,
+        "integrates_hudl": False,
+        "addresses_centerline": False,
+        "force_plate_r": Decimal("0.85"),
+        "peer_reviewed_validation": True,
+    }
+    singular = score_target(_evidence(**shared, named_acquirers=("orthopedic health system",)))
+    both_spellings = score_target(
+        _evidence(
+            **shared,
+            named_acquirers=("Orthopedic Health System", "orthopedic health systems"),
+        )
+    )
+    assert singular.technical_ingestion == Decimal("3.75")
+    assert singular.workflow_lock_in == Decimal("4.00")
+    assert singular.catalyst == Decimal("4.00")
+    assert singular.exit_path == Decimal("3.00")
+    assert both_spellings.exit_path == Decimal("3.00")
+    assert singular.composite == Decimal("3.7250")
+    assert both_spellings.composite == singular.composite
+    assert singular.gate_pass is False
+    assert singular.input_sha256 == both_spellings.input_sha256
 
 
 def test_first_close_math_reconciles_six_to_seven_lps() -> None:

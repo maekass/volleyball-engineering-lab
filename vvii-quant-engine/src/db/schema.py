@@ -6,7 +6,15 @@ from datetime import UTC, datetime
 from decimal import Decimal
 from pathlib import Path
 
-from sqlalchemy import Boolean, DateTime, Integer, String, Text, TypeDecorator
+from sqlalchemy import (
+    Boolean,
+    CheckConstraint,
+    DateTime,
+    Integer,
+    String,
+    Text,
+    TypeDecorator,
+)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 
 
@@ -52,8 +60,16 @@ class Base(DeclarativeBase):
     pass
 
 
+_HTTP_SOURCE_URL = "source_url LIKE 'https://%' OR source_url LIKE 'http://%'"
+
+
+def _http_source_constraint(table: str) -> CheckConstraint:
+    return CheckConstraint(_HTTP_SOURCE_URL, name=f"ck_{table}_source_url_http")
+
+
 class Signal(Base):
     __tablename__ = "signals"
+    __table_args__ = (_http_source_constraint("signals"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     signal_type: Mapped[str] = mapped_column(String(32), nullable=False)
@@ -66,6 +82,7 @@ class Signal(Base):
 
 class Target(Base):
     __tablename__ = "targets"
+    __table_args__ = (_http_source_constraint("targets"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     target_key: Mapped[str] = mapped_column(String(128), unique=True, nullable=False)
@@ -78,6 +95,7 @@ class Target(Base):
 
 class ClinicalBenchmarkRow(Base):
     __tablename__ = "clinical_benchmarks"
+    __table_args__ = (_http_source_constraint("clinical_benchmarks"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     benchmark_id: Mapped[str] = mapped_column(String(128), unique=True, nullable=False)
@@ -95,6 +113,7 @@ class ClinicalBenchmarkRow(Base):
 
 class DiligenceScoreRow(Base):
     __tablename__ = "diligence_scores"
+    __table_args__ = (_http_source_constraint("diligence_scores"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     target_id: Mapped[str] = mapped_column(String(128), nullable=False)

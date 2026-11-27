@@ -234,6 +234,7 @@ def test_challenge_inventory_follows_losing_team_and_reviewable_class() -> None:
         state,
         team="A",
         losing_team="A",
+        set_number=1,
         rally_index=8,
         geometry=reviewable,
     )
@@ -243,6 +244,7 @@ def test_challenge_inventory_follows_losing_team_and_reviewable_class() -> None:
         state,
         team="A",
         losing_team="A",
+        set_number=1,
         rally_index=8,
         geometry=reviewable,
     )
@@ -254,6 +256,7 @@ def test_challenge_inventory_follows_losing_team_and_reviewable_class() -> None:
         state,
         team="B",
         losing_team="A",
+        set_number=1,
         rally_index=9,
         geometry=reviewable,
     )
@@ -268,12 +271,60 @@ def test_challenge_inventory_follows_losing_team_and_reviewable_class() -> None:
         state,
         team="A",
         losing_team="A",
+        set_number=1,
         rally_index=10,
         geometry=not_reviewable,
     )
     assert denied.accepted is False
     assert denied.reason == "not_reviewable"
     assert state["A"].remaining == 1
+
+
+def test_same_rally_index_in_a_later_set_is_a_new_dead_ball() -> None:
+    state = {"A": TeamChallenges()}
+    open_set(state["A"], 1)
+    reviewable = classify_contact(
+        RallyContact(
+            set_number=1,
+            rally_index=1,
+            foot=FootContact(
+                side="negative",
+                min_x_m=Q("0.04"),
+                max_x_m=Q("0.16"),
+                contacted_court=True,
+            ),
+        )
+    )
+    first = request_challenge(
+        state,
+        team="A",
+        losing_team="A",
+        set_number=1,
+        rally_index=1,
+        geometry=reviewable,
+    )
+    assert first.accepted is True
+    later_set = request_challenge(
+        state,
+        team="A",
+        losing_team="A",
+        set_number=2,
+        rally_index=1,
+        geometry=reviewable,
+    )
+    assert later_set.accepted is True
+    assert later_set.reason == "accepted"
+    assert state["A"].remaining == 0
+    repeat = request_challenge(
+        state,
+        team="A",
+        losing_team="A",
+        set_number=1,
+        rally_index=1,
+        geometry=reviewable,
+    )
+    assert repeat.accepted is False
+    assert repeat.reason == "one_challenge_per_dead_ball"
 
 
 def test_sanders_daily_means_and_published_shares_stay_distinct() -> None:

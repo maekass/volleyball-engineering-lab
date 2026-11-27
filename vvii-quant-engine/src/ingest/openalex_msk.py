@@ -26,8 +26,11 @@ class LiteratureSignal(BaseModel):
 
 
 def build_openalex_params() -> dict[str, str]:
+    # OpenAlex treats bare words as AND. Volleyball stays mandatory; the
+    # clinical and sensing terms are alternatives so a tendon paper is not
+    # dropped for lacking an IMU keyword.
     return {
-        "search": "volleyball jump patellar ACL IMU optical",
+        "search": "volleyball AND (jump OR patellar OR ACL OR IMU OR optical)",
         "filter": "type:article",
         "per-page": "25",
     }

@@ -114,9 +114,9 @@ def test_spaced_rule_numbers_inside_a_pdf_still_parse() -> None:
 
 def test_openalex_query_and_parser_drop_records_without_a_url() -> None:
     params = build_openalex_params()
-    assert "volleyball" in params["search"]
-    for term in ("patellar", "ACL", "IMU", "optical"):
-        assert term in params["search"]
+    assert params["search"] == (
+        "volleyball AND (jump OR patellar OR ACL OR IMU OR optical)"
+    )
     payload = {
         "results": [
             {

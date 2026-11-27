@@ -203,7 +203,7 @@ def centerline_sampling_bound(frame_pixels_across_court: int) -> SamplingBound:
 @dataclass
 class TeamChallenges:
     remaining: int = 2
-    used_rallies: set[int] = field(default_factory=set)
+    used_rallies: set[tuple[int, int]] = field(default_factory=set)
 
 
 @dataclass(frozen=True)
@@ -216,7 +216,9 @@ def open_set(state: TeamChallenges, set_number: int) -> None:
     """Each team starts a match with two challenges.
 
     At the start of a fifth set the team receives one additional challenge,
-    and the inventory cannot exceed two.
+    and the inventory cannot exceed two. A dead ball is the pair
+    (set number, rally index), so the same rally index in a later set is a
+    new challenge opportunity.
     """
 
     if set_number == 1:
@@ -230,13 +232,15 @@ def request_challenge(
     states: dict[str, TeamChallenges],
     team: str,
     losing_team: str,
+    set_number: int,
     rally_index: int,
     geometry: ContactClassification,
 ) -> ChallengeDecision:
     team_state = states[team]
-    if rally_index in team_state.used_rallies:
+    dead_ball = (set_number, rally_index)
+    if dead_ball in team_state.used_rallies:
         return ChallengeDecision(False, "one_challenge_per_dead_ball")
-    team_state.used_rallies.add(rally_index)
+    team_state.used_rallies.add(dead_ball)
     if team != losing_team:
         return ChallengeDecision(False, "only_losing_team")
     if not geometry.reviewable_centerline:
