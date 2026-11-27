@@ -73,7 +73,7 @@ A claim is z-scored only when cohort, position, metric, and unit match and the b
 Clients take an `httpx.Client`, so tests run on a mock transport and a live pull is a deliberate call.
 
 - `ingest/openalex_msk.py` — OpenAlex works search. Volleyball is required. Jump, patellar, ACL, IMU, and optical are alternatives (`OR`), because a bare word list is an `AND`. Records without an HTTP identifier are rejected.
-- `ingest/patents_grants.py` — PatentsView query on CPC A63B and G06V with volleyball in the abstract. NSF award search filtered to SBIR and STTR program names.
+- `ingest/patents_grants.py` — USPTO Open Data Portal search for volleyball with CPC A63B and G06V. The former PatentsView host no longer resolves; a live pull reads `USPTO_ODP_API_KEY` and does not store the key. NSF award search filtered to SBIR and STTR program names.
 - `ingest/ncaa_rules.py` — local PDF text. Spaced NCAA numbering (`15 .2 .4 .3`) is normalized before rule 15.2.4.3, 1.2.2.4, and 18.1.4.7 are extracted. The rules books are not vendored.
 
 ## Artifacts

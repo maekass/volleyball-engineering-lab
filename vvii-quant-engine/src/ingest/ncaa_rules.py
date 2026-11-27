@@ -1,7 +1,10 @@
 """Extract cited NCAA rule numbers from a local rules PDF.
 
 The parser normalizes the spaced numbering used in NCAA PDF text extraction
-(`15 .2 .4 .3`) and returns only the rule identifiers this engine models.
+(`15 .2 .4 .3`). pypdf also emits U+FFFD between the digits of some rule
+numbers in the official book (`1.2.2.4`), so those separators are treated as
+dots before the number is read. The parser returns only the rule identifiers
+this engine models.
 It does not download the rules book.
 """
 
@@ -21,6 +24,16 @@ _RULE_TOPICS = {
     "18.1.4.7": "challenge_review",
 }
 _NUMBER = re.compile(r"\d(?:\s*\.\s*\d)+")
+_DOT_LIKE = str.maketrans(
+    {
+        "\ufffd": ".",
+        "\u00b7": ".",
+        "\u2024": ".",
+        "\u2219": ".",
+        "\u2022": ".",
+        "\uf0b7": ".",
+    }
+)
 
 
 class RuleExcerpt(BaseModel):
@@ -34,7 +47,7 @@ class RuleExcerpt(BaseModel):
 
 
 def normalize_rule_text(text: str) -> str:
-    cleaned = text.replace("\u00a0", " ")
+    cleaned = text.replace("\u00a0", " ").translate(_DOT_LIKE)
     cleaned = _NUMBER.sub(lambda match: re.sub(r"\s+", "", match.group(0)), cleaned)
     return re.sub(r"[ \t]+", " ", cleaned)
 

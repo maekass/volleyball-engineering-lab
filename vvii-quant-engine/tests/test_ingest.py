@@ -1,4 +1,4 @@
-"""Parsers for OpenAlex, PatentsView, NSF, and NCAA rule PDFs. No live network."""
+"""Parsers for OpenAlex, USPTO, NSF, and NCAA rule PDFs. No live network."""
 
 from __future__ import annotations
 
@@ -14,12 +14,13 @@ from ingest.openalex_msk import (
     parse_openalex_works,
 )
 from ingest.patents_grants import (
+    PatentSourceError,
     build_nsf_params,
-    build_patentsview_query,
+    build_patent_query,
     fetch_nsf,
     fetch_patents,
     parse_nsf_awards,
-    parse_patentsview,
+    parse_uspto_search,
 )
 from pypdf import PdfReader
 
@@ -71,6 +72,13 @@ def test_rule_normalizer_collapses_spaced_ncaa_numbering() -> None:
     raw = "15 .2 .4 .3 center line    1 .2 .2 .4 logos"
     assert "15.2.4.3" in normalize_rule_text(raw)
     assert "1.2.2.4" in normalize_rule_text(raw)
+
+
+def test_replacement_character_between_rule_digits_is_a_dot() -> None:
+    # Observed from pypdf text of the official rules book: the dots in
+    # 1.2.2.4 arrive as U+FFFD, so the logo rule would otherwise be dropped.
+    observed = "1\ufffd2\ufffd2\ufffd4 commercial logos between the attack line"
+    assert "1.2.2.4" in normalize_rule_text(observed)
 
 
 def test_pdf_fixture_round_trip_and_rule_parser() -> None:
@@ -164,26 +172,46 @@ def test_openalex_client_uses_injected_transport() -> None:
     assert rows[0].source_url == "https://openalex.org/W999"
 
 
-def test_patentsview_query_covers_a63b_and_g06v() -> None:
-    query = build_patentsview_query(size=5)
-    encoded = str(query)
-    assert "A63B" in encoded
-    assert "G06V" in encoded
-    assert "volleyball" in encoded
-    assert query["o"]["size"] == 5
-    rows = parse_patentsview(
+def test_uspto_query_keeps_volleyball_in_a63b_and_g06v() -> None:
+    query = build_patent_query(size=5)
+    assert "A63B" in query["q"]
+    assert "G06V" in query["q"]
+    assert "volleyball AND" in query["q"]
+    assert " OR " in query["q"]
+    assert query["pagination"]["limit"] == 5
+    rows = parse_uspto_search(
         {
-            "patents": [
+            "patentFileWrapperDataBag": [
                 {
-                    "patent_id": "US1234567B2",
-                    "patent_title": "Volleyball optical tracking",
-                    "patent_date": "2024-01-15",
-                }
+                    "applicationNumberText": "18000001",
+                    "applicationMetaData": {
+                        "inventionTitle": "Volleyball optical tracking",
+                        "patentNumber": "1234567",
+                        "cpcClassificationBag": ["A63B71/06"],
+                    },
+                },
+                {
+                    "applicationNumberText": "18000002",
+                    "applicationMetaData": {
+                        "inventionTitle": "Volleyball court vision",
+                        "patentNumber": "7654321",
+                        "cpcClassificationBag": ["G06V20/40"],
+                    },
+                },
+                {
+                    "applicationNumberText": "18000003",
+                    "applicationMetaData": {
+                        "inventionTitle": "Volleyball unrelated class",
+                        "patentNumber": "1111111",
+                        "cpcClassificationBag": ["H04N21/00"],
+                    },
+                },
             ]
         },
         retrieved_at=AS_OF,
     )
-    assert rows[0].source_url == "https://patents.google.com/patent/US1234567B2"
+    assert [row.external_id for row in rows] == ["US1234567", "US7654321"]
+    assert rows[0].source_url == "https://patents.google.com/patent/US1234567"
     assert rows[0].signal_type == "patent"
 
 
@@ -228,12 +256,15 @@ def test_patent_and_nsf_clients_post_and_get_through_the_injected_transport() ->
 
     def handler(request: httpx.Request) -> httpx.Response:
         seen.append(f"{request.method} {request.url.host} {request.url.path}")
-        if request.url.host == "search.patentsview.org":
-            return httpx.Response(200, json={"patents": []})
+        if request.url.host == "api.uspto.gov":
+            assert request.headers["X-API-KEY"] == "fixture-key"
+            return httpx.Response(200, json={"patentFileWrapperDataBag": []})
         return httpx.Response(200, json={"response": {"award": []}})
 
     client = httpx.Client(transport=httpx.MockTransport(handler))
-    assert fetch_patents(client, retrieved_at=AS_OF) == []
+    assert fetch_patents(client, retrieved_at=AS_OF, api_key="fixture-key") == []
     assert fetch_nsf(client, program="STTR", retrieved_at=AS_OF) == []
-    assert any("search.patentsview.org" in row and row.startswith("POST") for row in seen)
+    with pytest.raises(PatentSourceError):
+        fetch_patents(client, retrieved_at=AS_OF, api_key="")
+    assert any("api.uspto.gov" in row and row.startswith("POST") for row in seen)
     assert any("api.nsf.gov" in row and row.startswith("GET") for row in seen)

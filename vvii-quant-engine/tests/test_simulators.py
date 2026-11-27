@@ -18,6 +18,7 @@ from engines.dvw_rule_simulator import (
     classify_contact,
     open_set,
     request_challenge,
+    resolve_challenge,
     summarize_match,
 )
 from engines.msk_validation_audit import (
@@ -119,6 +120,46 @@ def test_nonfoot_cross_faults_only_with_interference() -> None:
     assert contacted.legacy_fault is True
     assert contacted.rule_2026_fault is True
     assert contacted.reviewable_centerline is False
+
+
+def test_partial_cross_with_interference_is_a_fault_but_not_reviewable() -> None:
+    result = classify_contact(
+        RallyContact(
+            set_number=1,
+            rally_index=6,
+            foot=FootContact(
+                side="negative",
+                min_x_m=Q("0.01"),
+                max_x_m=Q("0.12"),
+                contacted_court=True,
+            ),
+            interference=True,
+        )
+    )
+    assert result.foot_completely_crossed is False
+    assert result.legacy_fault is True
+    assert result.rule_2026_fault is True
+    assert result.reviewable_centerline is False
+
+
+def test_raised_heel_above_the_line_is_not_a_complete_cross() -> None:
+    result = classify_contact(
+        RallyContact(
+            set_number=1,
+            rally_index=7,
+            foot=FootContact(
+                side="negative",
+                min_x_m=Q("0.04"),
+                max_x_m=Q("0.12"),
+                contacted_court=True,
+                projection_min_x_m=Q("0.01"),
+                projection_max_x_m=Q("0.12"),
+            ),
+        )
+    )
+    assert result.foot_completely_crossed is False
+    assert result.rule_2026_fault is False
+    assert result.reviewable_centerline is False
 
 
 def test_match_log_counts_only_status_changes() -> None:
@@ -239,7 +280,7 @@ def test_challenge_inventory_follows_losing_team_and_reviewable_class() -> None:
         geometry=reviewable,
     )
     assert granted.accepted is True
-    assert state["A"].remaining == 1
+    assert state["A"].remaining == 2
     second = request_challenge(
         state,
         team="A",
@@ -250,7 +291,7 @@ def test_challenge_inventory_follows_losing_team_and_reviewable_class() -> None:
     )
     assert second.accepted is False
     assert second.reason == "one_challenge_per_dead_ball"
-    assert state["A"].remaining == 1
+    assert state["A"].remaining == 2
 
     winner = request_challenge(
         state,
@@ -274,10 +315,11 @@ def test_challenge_inventory_follows_losing_team_and_reviewable_class() -> None:
         set_number=1,
         rally_index=10,
         geometry=not_reviewable,
+        category="touch",
     )
     assert denied.accepted is False
     assert denied.reason == "not_reviewable"
-    assert state["A"].remaining == 1
+    assert state["A"].remaining == 2
 
 
 def test_same_rally_index_in_a_later_set_is_a_new_dead_ball() -> None:
@@ -314,6 +356,9 @@ def test_same_rally_index_in_a_later_set_is_a_new_dead_ball() -> None:
     )
     assert later_set.accepted is True
     assert later_set.reason == "accepted"
+    assert state["A"].remaining == 2
+    resolve_challenge(state, first, called_fault=True, geometry=reviewable)
+    resolve_challenge(state, later_set, called_fault=True, geometry=reviewable)
     assert state["A"].remaining == 0
     repeat = request_challenge(
         state,
@@ -325,6 +370,68 @@ def test_same_rally_index_in_a_later_set_is_a_new_dead_ball() -> None:
     )
     assert repeat.accepted is False
     assert repeat.reason == "one_challenge_per_dead_ball"
+
+
+def test_a_wrong_centerline_call_can_be_challenged_and_a_reversal_is_kept() -> None:
+    state = {"A": TeamChallenges()}
+    open_set(state["A"], 1)
+    still_on_the_line = classify_contact(
+        RallyContact(
+            set_number=1,
+            rally_index=1,
+            foot=FootContact(
+                side="negative",
+                min_x_m=Q("-0.01"),
+                max_x_m=Q("0.02"),
+                contacted_court=True,
+            ),
+        )
+    )
+    assert still_on_the_line.reviewable_centerline is False
+    first = request_challenge(
+        state,
+        team="A",
+        losing_team="A",
+        set_number=1,
+        rally_index=1,
+        geometry=still_on_the_line,
+    )
+    second = request_challenge(
+        state,
+        team="A",
+        losing_team="A",
+        set_number=1,
+        rally_index=2,
+        geometry=still_on_the_line,
+    )
+    assert first.accepted is True
+    assert second.accepted is True
+    assert resolve_challenge(
+        state, first, called_fault=True, geometry=still_on_the_line
+    ).outcome == "reversed"
+    assert resolve_challenge(
+        state, second, called_fault=True, geometry=still_on_the_line
+    ).charged is False
+    third = request_challenge(
+        state,
+        team="A",
+        losing_team="A",
+        set_number=1,
+        rally_index=3,
+        geometry=still_on_the_line,
+    )
+    assert third.accepted is True
+    assert state["A"].remaining == 2
+    inconclusive = resolve_challenge(
+        state,
+        third,
+        called_fault=True,
+        geometry=still_on_the_line,
+        conclusive=False,
+    )
+    assert inconclusive.outcome == "stands"
+    assert inconclusive.charged is True
+    assert state["A"].remaining == 1
 
 
 def test_sanders_daily_means_and_published_shares_stay_distinct() -> None:

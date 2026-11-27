@@ -32,12 +32,22 @@ LOGO_BOX_LIMIT_M = Decimal(3)
 
 
 class FootContact(BaseModel):
+    """Contact patch plus the optional projection of the whole foot.
+
+    ``min_x_m`` and ``max_x_m`` are the part that touches the court. The
+    projection bounds include a part in the air above the center line. A
+    raised heel still occupies that line, so the contact patch alone does
+    not decide a complete cross.
+    """
+
     model_config = ConfigDict(frozen=True)
 
     side: str
     min_x_m: Decimal
     max_x_m: Decimal
     contacted_court: bool
+    projection_min_x_m: Decimal | None = None
+    projection_max_x_m: Decimal | None = None
 
     @model_validator(mode="after")
     def ordered_patch(self) -> FootContact:
@@ -45,6 +55,16 @@ class FootContact(BaseModel):
             raise ValueError("side must be negative or positive")
         if self.min_x_m > self.max_x_m:
             raise ValueError("min_x_m exceeds max_x_m")
+        has_min = self.projection_min_x_m is not None
+        has_max = self.projection_max_x_m is not None
+        if has_min != has_max:
+            raise ValueError("projection bounds are supplied as a pair")
+        if (
+            self.projection_min_x_m is not None
+            and self.projection_max_x_m is not None
+            and self.projection_min_x_m > self.projection_max_x_m
+        ):
+            raise ValueError("projection_min_x_m exceeds projection_max_x_m")
         return self
 
 
@@ -113,28 +133,76 @@ class MatchImpact(BaseModel):
     ancillary_net_on_review: int
 
 
-def foot_completely_crossed(foot: FootContact) -> bool:
-    """True when the whole contact patch is past the far edge of the center line.
+def _projection(foot: FootContact) -> tuple[Decimal, Decimal]:
+    low = (
+        foot.min_x_m
+        if foot.projection_min_x_m is None
+        else foot.projection_min_x_m
+    )
+    high = (
+        foot.max_x_m
+        if foot.projection_max_x_m is None
+        else foot.projection_max_x_m
+    )
+    return low, high
 
-    The line belongs to both courts, so a patch that still touches it has not
-    completely crossed.
+
+def foot_completely_crossed(foot: FootContact) -> bool:
+    """True when the whole foot, including any part above the line, is past it.
+
+    The line belongs to both courts. A heel still above the line means the
+    foot has not completely crossed, even if the toes touch the far court.
     """
 
+    low, high = _projection(foot)
     if foot.side == "negative":
-        return foot.min_x_m > CENTER_LINE_HALF_WIDTH_M
-    return foot.max_x_m < -CENTER_LINE_HALF_WIDTH_M
+        return low > CENTER_LINE_HALF_WIDTH_M
+    return high < -CENTER_LINE_HALF_WIDTH_M
+
+
+def _contacts_opponents_court(foot: FootContact) -> bool:
+    if not foot.contacted_court:
+        return False
+    if foot.side == "negative":
+        return foot.max_x_m > CENTER_LINE_HALF_WIDTH_M
+    return foot.min_x_m < -CENTER_LINE_HALF_WIDTH_M
+
+
+def _overlaps_center_line(foot: FootContact) -> bool:
+    low, high = _projection(foot)
+    return low <= CENTER_LINE_HALF_WIDTH_M and high >= -CENTER_LINE_HALF_WIDTH_M
 
 
 def classify_contact(event: RallyContact) -> ContactClassification:
-    crossed = event.foot is not None and foot_completely_crossed(event.foot)
-    foot_contact_fault = bool(
-        crossed and event.foot is not None and event.foot.contacted_court
+    """Classify one contact under Rule 15.2.4.
+
+    A foot may touch the opponent's court while part of it remains on or
+    above the center line, unless that contact interferes (Rule 15.2.4.2).
+    A complete cross that also touches the court is a fault whether or not
+    it interferes (Rule 15.2.4.3). Only that complete foot-cross is the
+    center-line fact a challenge reviews. Interference on a partial cross
+    is a fault, and it is not that reviewable fact.
+    """
+
+    foot = event.foot
+    crossed = foot is not None and foot_completely_crossed(foot)
+    foot_contact_fault = bool(crossed and foot is not None and foot.contacted_court)
+    partial_interference = bool(
+        foot is not None
+        and _contacts_opponents_court(foot)
+        and _overlaps_center_line(foot)
+        and event.interference
+        and not crossed
     )
-    any_cross = crossed or event.nonfoot_crossed
-    legacy = any_cross and (event.interference or event.safety_hazard)
+    penetrated = foot_contact_fault or partial_interference or (
+        foot is not None and _contacts_opponents_court(foot)
+    )
+    legacy = (penetrated or event.nonfoot_crossed) and (
+        event.interference or event.safety_hazard
+    )
     other_body = event.nonfoot_crossed and event.interference
-    safety = event.safety_hazard and any_cross
-    rule_2026 = foot_contact_fault or other_body or safety
+    safety = event.safety_hazard and (penetrated or event.nonfoot_crossed)
+    rule_2026 = foot_contact_fault or partial_interference or other_body or safety
     return ContactClassification(
         foot_completely_crossed=crossed,
         legacy_fault=legacy,
@@ -210,6 +278,20 @@ class TeamChallenges:
 class ChallengeDecision:
     accepted: bool
     reason: str
+    team: str = ""
+    set_number: int = 0
+    rally_index: int = 0
+
+
+@dataclass(frozen=True)
+class ChallengeResolution:
+    """Rule 18.1.5.8. A reversal keeps the challenge. A confirmed call, or a
+    review that stands for lack of indisputable evidence, spends it.
+    """
+
+    outcome: str
+    charged: bool
+    remaining: int
 
 
 def open_set(state: TeamChallenges, set_number: int) -> None:
@@ -235,17 +317,65 @@ def request_challenge(
     set_number: int,
     rally_index: int,
     geometry: ContactClassification,
+    category: str = "center_line",
 ) -> ChallengeDecision:
+    """Accept or refuse the request. Inventory changes only at resolution.
+
+    ``geometry`` is the measured contact. It does not decide whether a
+    center-line call may be challenged. A coach can challenge a whistled
+    foot fault that the measurement later shows never left the line.
+    ``geometry`` is retained so a caller can pass the classification it
+    already computed; resolution reads that classification separately.
+    """
+
+    del geometry
     team_state = states[team]
     dead_ball = (set_number, rally_index)
+
+    def refused(reason: str) -> ChallengeDecision:
+        return ChallengeDecision(False, reason, team, set_number, rally_index)
+
     if dead_ball in team_state.used_rallies:
-        return ChallengeDecision(False, "one_challenge_per_dead_ball")
+        return refused("one_challenge_per_dead_ball")
     team_state.used_rallies.add(dead_ball)
     if team != losing_team:
-        return ChallengeDecision(False, "only_losing_team")
-    if not geometry.reviewable_centerline:
-        return ChallengeDecision(False, "not_reviewable")
+        return refused("only_losing_team")
+    if category != "center_line":
+        return refused("not_reviewable")
     if team_state.remaining <= 0:
-        return ChallengeDecision(False, "no_challenges_remaining")
+        return refused("no_challenges_remaining")
+    return ChallengeDecision(True, "accepted", team, set_number, rally_index)
+
+
+def resolve_challenge(
+    states: dict[str, TeamChallenges],
+    decision: ChallengeDecision,
+    *,
+    called_fault: bool,
+    geometry: ContactClassification,
+    conclusive: bool = True,
+) -> ChallengeResolution:
+    """Apply Rule 18.1.5.8 after the review is watched.
+
+    The reviewed fact is whether the foot completely crossed and contacted
+    the opponent's court. When that fact disagrees with the call, the
+    outcome is reversed and the challenge is retained. When the video
+    confirms the call, or is not conclusive, the challenge is spent.
+    """
+
+    if not decision.accepted:
+        raise ValueError("an unaccepted challenge has no resolution")
+    team_state = states[decision.team]
+    actual_complete_cross = geometry.reviewable_centerline
+    if not conclusive:
+        outcome = "stands"
+        reversed_outcome = False
+    else:
+        reversed_outcome = called_fault != actual_complete_cross
+        outcome = "reversed" if reversed_outcome else "confirmed"
+    if reversed_outcome:
+        return ChallengeResolution(outcome, False, team_state.remaining)
+    if team_state.remaining <= 0:
+        raise ValueError("no challenge remains to charge")
     team_state.remaining -= 1
-    return ChallengeDecision(True, "accepted")
+    return ChallengeResolution(outcome, True, team_state.remaining)
