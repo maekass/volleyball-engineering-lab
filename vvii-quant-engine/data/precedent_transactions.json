@@ -1,0 +1,283 @@
+{
+  "ledger_id": "vvii-precedent-2016-2026",
+  "compiled_on": "2026-11-27",
+  "window": {"start": "2016-01-01", "end": "2026-12-31"},
+  "summation_policy": "Sum a row only when sum_eligible is true. That flag is reserved for a point USD amount that is disclosed, in-window, and not a cumulative restatement of other rows. Floors, valuations, undisclosed prices, unconfirmed secondary figures, native-currency amounts without a locked FX rate, and multi-sport platform rounds are retained and excluded.",
+  "tiers": [
+    {
+      "id": "tier_1_league_capital",
+      "name": "Pro league and franchise capital"
+    },
+    {
+      "id": "tier_2_volleyball_software",
+      "name": "Volleyball-native software transactions"
+    },
+    {
+      "id": "tier_3_adjacent_infrastructure",
+      "name": "Adjacent performance, video, and venue infrastructure"
+    }
+  ],
+  "ecosystem_counts": {
+    "ncaa_program_census": {
+      "status": "not_in_database",
+      "mandate_coverage_target": "1800+",
+      "note": "The mandate names 1,800 or more NCAA programs. This file is not that census."
+    },
+    "pro_franchises": [
+      {
+        "league": "LOVB Pro",
+        "reported_team_count": 6,
+        "as_of": "2025-08-06",
+        "source_url": "https://frontofficesports.com/newsletter/asset-class-pes-new-frontier/",
+        "source_quality": "secondary_press",
+        "names_status": "count_only"
+      },
+      {
+        "league": "MLV",
+        "reported_team_count": 8,
+        "named_clubs": [
+          "Atlanta",
+          "Columbus",
+          "Dallas",
+          "Grand Rapids",
+          "Indianapolis",
+          "Omaha",
+          "Orlando",
+          "San Diego"
+        ],
+        "as_of": "2025-08-06",
+        "season": "2026",
+        "source_url": "https://frontofficesports.com/newsletter/asset-class-pes-new-frontier/",
+        "source_quality": "secondary_press"
+      },
+      {
+        "league": "Athletes Unlimited Pro Volleyball",
+        "reported_team_count": 4,
+        "as_of": "2025-08-06",
+        "source_url": "https://frontofficesports.com/newsletter/asset-class-pes-new-frontier/",
+        "source_quality": "secondary_press",
+        "names_status": "count_only"
+      }
+    ]
+  },
+  "omissions": [
+    {
+      "topic": "Hudl July 2017 financing",
+      "reason": "Secondary aggregators do not agree on the round label or the amount. No primary release is attached, so the row is omitted rather than estimated."
+    }
+  ],
+  "transactions": [
+    {
+      "id": "lovb-series-a-2022-09",
+      "tier": "tier_1_league_capital",
+      "date": "2022-09",
+      "date_precision": "month",
+      "parties": ["League One Volleyball"],
+      "transaction_type": "equity_financing",
+      "amount_usd": 16750000,
+      "amount_status": "disclosed_point",
+      "volleyball_exclusive": true,
+      "sum_eligible": true,
+      "source_url": "https://www.sportsbusinessjournal.com/Articles/2024/11/21/league-one-volleyball-funding-atwater-capital/",
+      "source_note": "Sports Business Journal, 21 November 2024, describing a $16.75 million Series A in September 2022."
+    },
+    {
+      "id": "lovb-series-b-2023-09",
+      "tier": "tier_1_league_capital",
+      "date": "2023-09",
+      "date_precision": "month",
+      "parties": ["League One Volleyball"],
+      "transaction_type": "equity_financing",
+      "amount_usd": 35000000,
+      "amount_status": "disclosed_point",
+      "volleyball_exclusive": true,
+      "sum_eligible": true,
+      "source_url": "https://www.sportsbusinessjournal.com/Articles/2024/11/21/league-one-volleyball-funding-atwater-capital/",
+      "source_note": "Same Sports Business Journal article: $35 million Series B in September 2023."
+    },
+    {
+      "id": "lovb-2024-11-21-atwater",
+      "tier": "tier_1_league_capital",
+      "date": "2024-11-21",
+      "date_precision": "day",
+      "parties": ["League One Volleyball", "Atwater Capital", "Ares Management", "Left Lane Capital"],
+      "transaction_type": "equity_financing",
+      "amount_usd": 100000000,
+      "amount_status": "disclosed_point",
+      "issuer_reported_cumulative_usd": 160000000,
+      "volleyball_exclusive": true,
+      "sum_eligible": true,
+      "source_url": "https://www.lovb.com/news/100m-in-new-funding-for-league-one-volleyball",
+      "source_note": "Company release, 21 November 2024: $100 million of committed new funding. The same release states $160 million raised to date. The cumulative figure is context and is not added to the point sum."
+    },
+    {
+      "id": "au-2022-platform-round",
+      "tier": "tier_1_league_capital",
+      "date": "2022",
+      "date_precision": "year",
+      "parties": ["Athletes Unlimited"],
+      "transaction_type": "equity_financing",
+      "amount_usd": 30000000,
+      "amount_status": "disclosed_point",
+      "volleyball_exclusive": false,
+      "sum_eligible": false,
+      "exclusion_reason": "Multi-sport platform round. Volleyball is one league among others, so the amount is not treated as volleyball-exclusive capital.",
+      "source_url": "https://frontofficesports.com/newsletter/asset-class-pes-new-frontier/",
+      "source_note": "Front Office Sports, 6 August 2025: a 2022 Athletes Unlimited round of $30 million spread across its leagues, including volleyball."
+    },
+    {
+      "id": "pvf-commitment-floor",
+      "tier": "tier_1_league_capital",
+      "date": "2025-01-07",
+      "date_precision": "day",
+      "parties": ["Pro Volleyball Federation"],
+      "transaction_type": "committed_capital",
+      "amount_usd": null,
+      "amount_floor_usd": 150000000,
+      "amount_status": "reported_floor",
+      "volleyball_exclusive": true,
+      "sum_eligible": false,
+      "exclusion_reason": "Reported floor, not a point amount. Overlap with later MLV funding reports is unresolved.",
+      "source_url": "https://www.axios.com/pro/media-deals/2025/01/07/womens-sports-investors-bet-on-volleyball-breakout",
+      "source_note": "Axios, 7 January 2025: backers have committed more than $150 million."
+    },
+    {
+      "id": "mlv-2026-launch-funding-secondary",
+      "tier": "tier_1_league_capital",
+      "date": "2025-08-06",
+      "date_precision": "day",
+      "parties": ["Major League Volleyball"],
+      "transaction_type": "equity_financing",
+      "amount_usd": 100000000,
+      "amount_status": "secondary_report",
+      "volleyball_exclusive": true,
+      "sum_eligible": false,
+      "exclusion_reason": "Secondary report of launch funding, with overlap risk against the PVF commitment floor.",
+      "source_url": "https://frontofficesports.com/newsletter/asset-class-pes-new-frontier/",
+      "source_note": "Front Office Sports, 6 August 2025: MLV was set to launch in January 2026 with $100 million in funding."
+    },
+    {
+      "id": "mlv-pvf-2025-merger-reports",
+      "tier": "tier_1_league_capital",
+      "date": "2025-08-06",
+      "date_precision": "day",
+      "parties": ["Major League Volleyball", "Pro Volleyball Federation"],
+      "transaction_type": "merger",
+      "amount_usd": null,
+      "reported_raise_usd": 40000000,
+      "reported_raise_status": "unconfirmed_press_report",
+      "valuation_floor_usd": 325000000,
+      "valuation_status": "valuation_not_proceeds",
+      "volleyball_exclusive": true,
+      "sum_eligible": false,
+      "exclusion_reason": "The raise is described as reported, and a spokesperson declined to comment on financial details. The valuation is not proceeds.",
+      "source_url": "https://frontofficesports.com/newsletter/asset-class-pes-new-frontier/",
+      "source_note": "Front Office Sports, 6 August 2025, citing Sportico on a valuation above $325 million and a reported $40 million raise."
+    },
+    {
+      "id": "hudl-volleymetrics-2017-12-13",
+      "tier": "tier_2_volleyball_software",
+      "date": "2017-12-13",
+      "date_precision": "day",
+      "parties": ["Hudl", "VolleyMetrics"],
+      "transaction_type": "acquisition",
+      "amount_usd": null,
+      "amount_status": "undisclosed",
+      "volleyball_exclusive": true,
+      "sum_eligible": false,
+      "exclusion_reason": "Consideration was not disclosed.",
+      "source_url": "https://www.hudl.com/blog/hudl-acquires-volleymetrics-strengthens-solutions-for-volleyball-at-every-level",
+      "source_note": "Hudl, 13 December 2017. VolleyMetrics is described as serving more than 350 collegiate and professional organizations at announcement."
+    },
+    {
+      "id": "hudl-balltime-2025-02-06",
+      "tier": "tier_2_volleyball_software",
+      "date": "2025-02-06",
+      "date_precision": "day",
+      "parties": ["Hudl", "Balltime"],
+      "transaction_type": "acquisition",
+      "amount_usd": null,
+      "amount_status": "undisclosed",
+      "volleyball_exclusive": true,
+      "sum_eligible": false,
+      "exclusion_reason": "Consideration was not disclosed.",
+      "source_url": "https://www.hudl.com/blog/hudl-expands-volleyball-focus-through-game-changing-acquisition-of-balltime",
+      "source_note": "Hudl, 6 February 2025. Indoor and beach volleyball video and statistics."
+    },
+    {
+      "id": "catapult-xos-2016-07-13",
+      "tier": "tier_3_adjacent_infrastructure",
+      "date": "2016-07-13",
+      "date_precision": "day",
+      "parties": ["Catapult", "XOS Technologies"],
+      "transaction_type": "acquisition",
+      "amount_usd": 60000000,
+      "amount_status": "disclosed_point",
+      "volleyball_exclusive": false,
+      "sum_eligible": true,
+      "source_url": "https://announcements.asx.com.au/asxpdf/20171020/pdf/43nf6f7b98h1nt.pdf",
+      "source_note": "Catapult ASX filing: agreed on 13 July 2016 to acquire XOS Technologies for US$60 million. Elite video across sports, not a volleyball-only asset. Included as adjacent strategic-acquirer precedent."
+    },
+    {
+      "id": "catapult-playertek-2016-07-13",
+      "tier": "tier_3_adjacent_infrastructure",
+      "date": "2016-07-13",
+      "date_precision": "day",
+      "parties": ["Catapult", "PlayerTek"],
+      "transaction_type": "acquisition",
+      "amount_usd": null,
+      "amount_native": 3300000,
+      "currency": "EUR",
+      "amount_status": "disclosed_native_currency",
+      "volleyball_exclusive": false,
+      "sum_eligible": false,
+      "exclusion_reason": "Disclosed in euros, cash and scrip. No FX rate is locked in this ledger, so the row is excluded from the USD sum.",
+      "source_url": "https://www.sbs.com.au/news/article/catapult-targets-wider-sport-tech-market/nqoiw8k1v",
+      "source_note": "SBS, 13 July 2016: 3.3 million euros in cash and scrip for PlayerTek."
+    },
+    {
+      "id": "hudl-bain-2020-05",
+      "tier": "tier_3_adjacent_infrastructure",
+      "date": "2020-05",
+      "date_precision": "month",
+      "parties": ["Hudl", "Bain Capital Tech Opportunities"],
+      "transaction_type": "equity_financing",
+      "amount_usd": 120000000,
+      "amount_status": "disclosed_point",
+      "volleyball_exclusive": false,
+      "sum_eligible": true,
+      "source_url": "https://www.sportsbusinessjournal.com/Daily/Issues/2022/06/22/Technology/hudl-blueframe-realtracksystems/",
+      "source_note": "Sports Business Journal, 21 June 2022, describing a $120 million investment led by Bain Capital Tech Opportunities in May 2020. Company-wide financing. Volleyball is one sport on the platform."
+    },
+    {
+      "id": "learfield-paciolan-2017-06-12",
+      "tier": "tier_3_adjacent_infrastructure",
+      "date": "2017-06-12",
+      "date_precision": "day",
+      "parties": ["Learfield", "Paciolan", "Comcast Spectacor"],
+      "transaction_type": "acquisition",
+      "amount_usd": null,
+      "amount_status": "undisclosed",
+      "volleyball_exclusive": false,
+      "sum_eligible": false,
+      "exclusion_reason": "Terms were stated as confidential.",
+      "source_url": "https://www.learfield.com/2017/06/learfield-to-acquire-spectras-ticketing-fan-engagement-division-from-comcast-spectacor/",
+      "source_note": "Learfield, 12 June 2017. Collegiate ticketing platform. Not volleyball-exclusive."
+    },
+    {
+      "id": "seatgeek-paciolan-2023-02-06",
+      "tier": "tier_3_adjacent_infrastructure",
+      "date": "2023-02-06",
+      "date_precision": "day",
+      "parties": ["SeatGeek", "Paciolan"],
+      "transaction_type": "commercial_partnership",
+      "amount_usd": null,
+      "amount_status": "not_a_purchase",
+      "volleyball_exclusive": false,
+      "sum_eligible": false,
+      "exclusion_reason": "Secondary-ticketing partnership. Not an acquisition and no consideration was disclosed.",
+      "source_url": "https://www.businesswire.com/news/home/20230206005423/en/SeatGeek-Partners-with-Paciolan-the-Largest-Ticketing-Company-in-College-Athletics",
+      "source_note": "Business Wire, 6 February 2023. SeatGeek as Paciolan's official secondary marketplace."
+    }
+  ]
+}
